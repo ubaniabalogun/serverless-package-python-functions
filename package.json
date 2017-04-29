@@ -1,0 +1,17 @@
+{
+  "name": "serverless-package-python-simply",
+  "version": "0.1",
+  "description": "Serverless Framework plugin to package python functions and their requirements",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "bluebird": "^3.5.0",
+    "fs-extra": "^3.0.0",
+    "lodash": "^4.17.4",
+    "zip-dir": "^1.0.2"
+  }
+}
