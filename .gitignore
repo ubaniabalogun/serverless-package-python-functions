@@ -1,7 +1,7 @@
 # Distribution / packaging
 .Python
 env/
-#build/
+build/
 develop-eggs/
 dist/
 downloads/
@@ -20,6 +20,4 @@ var/
 .serverless/
 # Other directories
 .DS_Store
-#function/
-#function2/
 node_modules/

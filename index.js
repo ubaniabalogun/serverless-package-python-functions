@@ -10,20 +10,34 @@ const zipdir = require('zip-dir');
 BbPromise.promisifyAll(Fse);
 
 
-class PyPkgNeatly {
+class PkgPyFuncs {
 
   fetchConfig(){
-    const config = this.serverless.service.custom.pyPkgNeatly
 
-    if (!config) {
-      throw new Error("No configuration detected")
+    if (!this.serverless.service.custom){
+      this.error("No serverless custom configurations are defined")
     }
 
+    const config = this.serverless.service.custom.pkgPyFuncs
+
+    if ( !config ) {
+      this.error("No serverless-package-python-functions configuration detected. Please see documentation")
+    }
     config.requirementsFile ? this.requirementsFile = config.requirementsFile  : this.requirementsFile = 'requirements.txt'
-    config.buildDir ? this.buildDir = config.buildDir : (() => { throw new Error("No buildDir config specified") })()
+    config.buildDir ? this.buildDir = config.buildDir : this.error("No buildDir configuration specified")
     config.globalRequirements ? this.globalRequirements = config.globalRequirements : this.globalRequirements = null
     config.globalIncludes ? this.globalIncludes = config.globalIncludes : this.globalIncludes = null
+    config.cleanup === undefined ? this.cleanup = true : this.cleanup = config.cleanup
+  }
 
+  clean(){
+    if (!this.cleanup) {
+      return false
+    }
+    this.log("Cleaning build directory")
+    Fse.removeAsync(this.buildDir)
+            .catch( err => { this.log(err) } )
+    return true
   }
 
   selectAll() {
@@ -35,7 +49,6 @@ class PyPkgNeatly {
         includes: target.package.include
       }
     })
-    this.log(JSON.stringify(info))
     return info
   }
 
@@ -45,9 +58,9 @@ class PyPkgNeatly {
   }
 
   makePackage(target){
+    this.log(`Packaging ${target.name}`)
     const buildPath = Path.join(this.buildDir, target.name)
     const requirementsPath = Path.join(buildPath,this.requirementsFile)
-    this.log(`RequirementsPath is ${requirementsPath}`)
     // Create package directory and package files
     Fse.ensureDirSync(buildPath)
     // Copy includes
@@ -58,7 +71,6 @@ class PyPkgNeatly {
     _.forEach(includes, (item) => { Fse.copySync(item, buildPath) } )
 
     // Install requirements
-    this.log(`Installing requirements for ${target.name}`)
     let requirements = [requirementsPath]
     if (this.globalRequirements){
       requirements = _.concat(requirements, this.globalRequirements)
@@ -70,7 +82,8 @@ class PyPkgNeatly {
   constructor(serverless, options) {
     this.serverless = serverless;
     this.options = options;
-    this.log = (msg) => { this.serverless.cli.log('[py-pkg-neatly] ' + msg) }
+    this.log = (msg) => { this.serverless.cli.log(`[serverless-package-python-functions] ${msg}`) }
+    this.error = (msg) => { throw new Error(`[serverless-package-python-functions] ${msg}`) }
 
 
 
@@ -82,16 +95,11 @@ class PyPkgNeatly {
         .then(this.selectAll)
         .map(this.makePackage),
 
-      'after:package:createDeploymentArtifacts': this.welcomeUser.bind(this),
-      'after:package:finalize': () => {this.log('after:package:finalize')},
-      'before:deploy:deploy': () => {this.log('before:deploy:deploy')}
+      'after:deploy:deploy': () => BbPromise.bind(this)
+        .then(this.clean)
     };
 
   }
-
-  welcomeUser() {
-    this.log('[py-pkg-neatly] after:package:createDeploymentArtifacts');
-  }
 }
 
-module.exports = PyPkgNeatly;
+module.exports = PkgPyFuncs;
