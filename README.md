@@ -5,9 +5,6 @@
 - [What's it?](#what)
 - [Why do I need it?](#why)
 - [How does it work?](#how)
-- [Configuration](#config)
-- [Demo](#demo)
-- [Credit](#credit)
 
 ## <a id="what">What is it?</a>
 A Serverless Framework plugin for packaging Python Lambda functions with only the dependencies they need.
@@ -106,13 +103,21 @@ functions:
 ```
 
 The plugin configurations are simple:
-- `buildDir`: Path to a build directory the plugin can work in. It is created by the plugin if it doesn't exist.
-- `requirementsFile`: The name of the pip requirements file for each function. Defaults to `requirements.txt`. All function-level requirements files must use the name specified here
-- `globalRequirements`: A list of paths to files containing service-level pip requirements
-- `globalIncludes`: A list of paths to folders containing service-level code files (i.e. code common to all functions)
-- `cleanup`: Boolean indicating whether or not to delete the build directory after Serverless is done uploading the artifacts
+- `buildDir`: (Required) Path to a build directory the plugin can work in. It is created by the plugin if it doesn't exist.
+- `requirementsFile`: (Optional, Defaults to `requirements.txt`) The name of the pip requirements file for each function. All function-level requirements files must use the name specified here
+- `globalRequirements`: (Optional) A list of paths to files containing service-level pip requirements
+- `globalIncludes`: (Optional) A list of paths to folders containing service-level code files (i.e. code common to all functions)
+- `cleanup`: (Optional, Defaults to true) Boolean indicating whether or not to delete the build directory after Serverless is done uploading the artifacts
 
 At the function level, you:
 - Specify `name` to give your function a name. The plugin uses the function's name as the name of the zip artifact
 - Use `include` to specify what function-level files you want to include in your artifact. Simply specifying the path to the function's folder will include every file in the folder in the function's zip artifact
-- Use `artifact` to tell Serverless where to find the zip artifact. The plugin creates the zip artifact for the function at **`buildDir`/`name`.zip**, so using ${self:custom.pkgPyFuncs.buildDir}/[function-name-here].zip is advised.
+- Use `artifact` to tell Serverless where to find the zip artifact. The plugin creates the zip artifact for the function at `buildDir`/`name`.zip, so using `${self:custom.pkgPyFuncs.buildDir}/[function-name-here].zip` is advised.
+
+Now, you may be wondering, doesn't the [Serverless documentation say](https://serverless.com/framework/docs/providers/aws/guide/packaging#artifact):
+> Serverless won't zip your service if [artifact] is configured and therefore exclude and include will be ignored. Either you use artifact or include / exclude.
+
+Yes, that is correct and is actually awesome! Since Serverless ignores `include`/`exclude` silently when `artifact` is specified, it allows this plugin take advantage of the `include` property to provide you with a familiar interface for specifying function-level dependencies. So while this plugin uses `include` to determine what goes in your artifact, all Serverless cares about is the artifact that this plugin creates when it executes.
+
+The last thing that your keen eye may have noticed from the example `serverless.yml` above is that `handler` is specified simply as `lambda.handler` not `${self:custom.pkgPyFuncs.buildDir}/function/lambda.hadler` or `function/lambda.handler`. This is because the plugin zips your artifacts such that /path/to/function is the root of the zip file. Combined with the fact that it uses `pip install -t` to download pip dependencies directly to the top level of the zip file, this makes imports significantly simpler for your project.
+Furthermore, since `pip install -t` downloads the actual pip package files into a folder, this plugin works without the need for `virtualenv`
