@@ -1,6 +1,7 @@
 # serverless-package-python-functions
 
 [![serverless](http://public.serverless.com/badges/v3.svg)](http://www.serverless.com)
+[![npm version](https://badge.fury.io/js/serverless-package-python-functions.svg)](https://badge.fury.io/js/serverless-package-python-functions)
 
 - [What's it?](#what)
 - [Why do I need it?](#why)
