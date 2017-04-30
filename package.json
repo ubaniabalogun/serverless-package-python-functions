@@ -1,17 +1,40 @@
 {
   "name": "serverless-package-python-simply",
-  "version": "0.1",
+  "version": "0.1.0",
   "description": "Serverless Framework plugin to package python functions and their requirements",
   "main": "index.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
-  "author": "",
+  "scripts": {},
+  "author": "Ubani Balogun",
   "license": "ISC",
   "dependencies": {
     "bluebird": "^3.5.0",
     "fs-extra": "^3.0.0",
     "lodash": "^4.17.4",
     "zip-dir": "^1.0.2"
-  }
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ubaniabalogun/serverless-package-python-functions.git"
+  },
+  "keywords": [
+    "serverless",
+    "serverless",
+    "framework",
+    "plugin",
+    "serverless",
+    "applications",
+    "aws",
+    "lambda",
+    "amazon",
+    "amazon",
+    "web",
+    "services",
+    "python",
+    "pip",
+    "requirements"
+  ],
+  "bugs": {
+    "url": "https://github.com/ubaniabalogun/serverless-package-python-functions/issues"
+  },
+  "homepage": "https://github.com/ubaniabalogun/serverless-package-python-functions#readme"
 }
