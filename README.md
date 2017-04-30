@@ -3,9 +3,22 @@
 [![serverless](http://public.serverless.com/badges/v3.svg)](http://www.serverless.com)
 [![npm version](https://badge.fury.io/js/serverless-package-python-functions.svg)](https://badge.fury.io/js/serverless-package-python-functions)
 
+- [Installation](#install)
 - [What's it?](#what)
 - [Why do I need it?](#why)
 - [How does it work?](#how)
+
+## <a id="install">Installation</a>
+
+```
+$ npm install --save serverless-package-python-functions
+```
+
+```
+# serverless.yml
+plugins:
+  - serverless-package-python-functions
+```
 
 ## <a id="what">What is it?</a>
 A Serverless Framework plugin for packaging Python Lambda functions with only the dependencies they need.
@@ -19,14 +32,14 @@ Let's consider the following project structure
 ```
 your-awesome-project/
 ├── common_files
-│   ├── common1.py
-│   └── common2.py
+│   ├── common1.py
+│   └── common2.py
 ├── function1
-│   ├── lambda.py
-│   └── requirements.txt # with simplejson library
+│   ├── lambda.py
+│   └── requirements.txt # with simplejson library
 ├── function2
-│   ├── lambda.py
-│   └── requirements.txt
+│   ├── lambda.py
+│   └── requirements.txt
 ├── requirements.txt # with requests library
 └── serverless.yml
 ```
