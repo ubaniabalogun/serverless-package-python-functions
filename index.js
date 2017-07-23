@@ -28,21 +28,29 @@ class PkgPyFuncs {
     config.globalRequirements ? this.globalRequirements = config.globalRequirements : this.globalRequirements = null
     config.globalIncludes ? this.globalIncludes = config.globalIncludes : this.globalIncludes = null
     config.cleanup === undefined ? this.cleanup = true : this.cleanup = config.cleanup
+    this.useDocker = config.useDocker || false
+    this.dockerImage = config.dockerImage || `lambci/lambda:build-${this.serverless.service.provider.runtime}`
+    this.containerName = config.containerName || 'serverless-package-python-functions'
   }
 
   clean(){
     if (!this.cleanup) {
+      this.log('Cleanup is set to "false". Build directory and Docker container (if used) will be retained')
       return false
     }
     this.log("Cleaning build directory")
     Fse.removeAsync(this.buildDir)
             .catch( err => { this.log(err) } )
+
+    if (this.useDocker){
+      this.log("Removing Docker container")
+      this.runProcess('docker', ['stop',this.containerName,'-t','0'])
+    }
     return true
   }
 
   selectAll() {
     const functions = this.serverless.service.functions
-
     const info = _.map(functions, (target) => {
       return {
         name: target.name,
@@ -54,11 +62,64 @@ class PkgPyFuncs {
 
 
   installRequirements(buildPath,requirementsPath){
-    return ChildProcess.spawnSync('pip',['install','-t',buildPath,'-r',requirementsPath])
+    let cmd = 'pip'
+    let args = ['install','--upgrade','-t', buildPath, '-r', requirementsPath]
+    if ( this.useDocker === true ){
+      cmd = 'docker'
+      args = ['exec',this.containerName, 'pip', ...args]
+    }
+
+    return this.runProcess(cmd,args)
+  }
+
+  checkDocker(){
+    const out = this.runProcess('docker', ['version', '-f', 'Server Version {{.Server.Version}} & Client Version {{.Client.Version}}'])
+    this.log(`Using Docker ${out}`)
+  }
+
+  runProcess(cmd,args){
+    const ret = ChildProcess.spawnSync(cmd,args)
+    if (ret.error){
+      throw new this.serverless.classes.Error(`[serverless-package-python-functions] ${ret.error.message}`)
+    }
+
+    if (ret.stderr.length != 0){
+      throw new this.serverless.classes.Error(`[serverless-package-python-functions] ${ret.stderr.toString()}`)
+    }
+
+    const out = ret.stdout.toString()
+    return out
+  }
+
+  setupContainer(){
+    let out = this.runProcess('docker',['ps', '-a', '--filter',`name=${this.containerName}`,'--format','{{.Names}}'])
+    out = out.replace(/^\s+|\s+$/g, '')
+
+    if ( out === this.containerName ){
+      this.log('Container already exists. Reusing.')
+    } else {
+      this.runProcess(
+        'docker',
+        ['run', '--rm', '-dt', '-v', `${process.cwd()}:/var/task`,
+          '--name',this.containerName, this.dockerImage, 'bash']
+        )
+      this.log('Container created')
+    }
+  }
+
+  setupDocker(){
+    if (!this.useDocker){
+      return
+    }
+    this.log('Packaging using Docker container...')
+    this.checkDocker()
+    this.log(`Creating Docker container "${this.containerName}". Might take a while if the Docker Image, "${this.dockerImage}", isn't already downloaded...`)
+    this.setupContainer()
+    this.log('Docker setup completed')
   }
 
   makePackage(target){
-    this.log(`Packaging ${target.name}`)
+    this.log(`Packaging ${target.name}...`)
     const buildPath = Path.join(this.buildDir, target.name)
     const requirementsPath = Path.join(buildPath,this.requirementsFile)
     // Create package directory and package files
@@ -84,14 +145,11 @@ class PkgPyFuncs {
     this.options = options;
     this.log = (msg) => { this.serverless.cli.log(`[serverless-package-python-functions] ${msg}`) }
     this.error = (msg) => { throw new Error(`[serverless-package-python-functions] ${msg}`) }
-
-
-
-
     this.hooks = {
       'before:package:createDeploymentArtifacts': () => BbPromise.bind(this)
         .then(this.fetchConfig)
         .then( () => { Fse.ensureDirAsync(this.buildDir) })
+        .then(this.setupDocker)
         .then(this.selectAll)
         .map(this.makePackage),
 
