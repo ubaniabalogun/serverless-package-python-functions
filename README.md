@@ -68,6 +68,8 @@ import common1, common2, requests, simplejson
 ```
 in function1/lambda.py works like works like a charm!
 
+The plugin also supports packaging your dependencies using a Docker Image that replicates your cloud providers environment, allowing you easily work with platform-dependent libraries like numpy.
+
 
 ## <a id="how">How does it work?</a>
 The plugin handles the creation of the [artifact zip files](https://serverless.com/framework/docs/providers/aws/guide/packaging#artifact) for your Serverless functions.
@@ -117,11 +119,15 @@ functions:
 ```
 
 The plugin configurations are simple:
-- `buildDir`: (Required) Path to a build directory the plugin can work in. It is created by the plugin if it doesn't exist.
-- `requirementsFile`: (Optional, Defaults to `requirements.txt`) The name of the pip requirements file for each function. All function-level requirements files must use the name specified here
-- `globalRequirements`: (Optional) A list of paths to files containing service-level pip requirements
-- `globalIncludes`: (Optional) A list of paths to folders containing service-level code files (i.e. code common to all functions)
-- `cleanup`: (Optional, Defaults to true) Boolean indicating whether or not to delete the build directory after Serverless is done uploading the artifacts
+| Configuration      | Description                                                                                                                                                                                                        | Optional?                                                  |
+|--------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|------------------------------------------------------------|
+| buildDir           | Path to a build directory relative to project root, e.g. build                                                                                                                                                     | No                                                         |
+| requirementsFile   | The name of the requirements file used for function-level requirements. All function-level requirements files must use the name specified here.                                                                    | Yes. Defaults to `requirements.txt`                        |
+| globalRequirements | A list of paths to files containing service-level pip requirements.                                                                                                                                                | Yes                                                        |
+| globalIncludes     | A list of paths to folders containing service-level code files (i.e. code common to all functions). Only the folders contents will be packaged, not the folder itself. Paths to files are not currently supported. | Yes                                                        |
+| useDocker          | Boolean indicating whether to package pip dependencies using Docker. Set this to true if your project uses platform-specific compiled libraries like numpy. Requires a Docker installation.                        | Yes. Defaults to `false`                                   |
+| dockerImage        | The Docker image to use to compile functions if `useDocker` is set to `true`. If the image doesn't exist on the system, it will be downloaded. The initial download may take some time.                            | Yes. Defaults to `lambci/lambda:build-${provider.runtime}` |
+| containerName      | The desired name for the Docker container.                                                                                                                                                                         | Yes. Defaults to `serverless-package-python-functions`     |
 
 At the function level, you:
 - Specify `name` to give your function a name. The plugin uses the function's name as the name of the zip artifact
