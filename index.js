@@ -38,12 +38,12 @@ class PkgPyFuncs {
       this.log('Cleanup is set to "false". Build directory and Docker container (if used) will be retained')
       return false
     }
-    this.log("Cleaning build directory")
+    this.log("Cleaning build directory...")
     Fse.removeAsync(this.buildDir)
             .catch( err => { this.log(err) } )
 
     if (this.useDocker){
-      this.log("Removing Docker container")
+      this.log("Removing Docker container...")
       this.runProcess('docker', ['stop',this.containerName,'-t','0'])
     }
     return true
@@ -118,13 +118,22 @@ class PkgPyFuncs {
     }
   }
 
+  ensureImage(){
+    const out = this.runProcess('docker', ['images', '--format','{{.Repository}}:{{.Tag}}']).replace(/^\s+|\s+$/g, '')
+    if ( out != this.dockerImage ){
+      this.log(`Docker Image ${this.dockerImage} is not already installed on your system. Downloading. This might take a while. Subsequent deploys will be faster...`)
+      this.runProcess('docker', ['pull', this.dockerImage])
+    }
+  }
+
   setupDocker(){
     if (!this.useDocker){
       return
     }
     this.log('Packaging using Docker container...')
     this.checkDocker()
-    this.log(`Creating Docker container "${this.containerName}". Might take a while if the Docker Image, "${this.dockerImage}", isn't already downloaded...`)
+    this.ensureImage()
+    this.log(`Creating Docker container "${this.containerName}"...`)
     this.setupContainer()
     this.log('Docker setup completed')
   }
