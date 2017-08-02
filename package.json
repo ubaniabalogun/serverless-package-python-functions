@@ -10,7 +10,7 @@
     "bluebird": "^3.5.0",
     "fs-extra": "^3.0.0",
     "lodash": "^4.17.4",
-    "zip-dir": "^1.0.2"
+    "zip-local": "^0.3.4"
   },
   "repository": {
     "type": "git",

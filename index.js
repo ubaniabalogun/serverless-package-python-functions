@@ -5,7 +5,7 @@ const _ = require('lodash');
 const Fse = require('fs-extra');
 const Path = require('path');
 const ChildProcess = require('child_process');
-const zipdir = require('zip-dir');
+const zipper = require('zip-local');
 
 BbPromise.promisifyAll(Fse);
 
@@ -157,7 +157,7 @@ class PkgPyFuncs {
       requirements = _.concat(requirements, this.globalRequirements)
     }
     _.forEach(requirements, (req) => { this.installRequirements(buildPath,req)})
-    zipdir(buildPath, { saveTo: `${buildPath}.zip`}, (err,buffer) => {} )
+    zipper.sync.zip(buildPath).compress().save(`${buildPath}.zip`)
   }
 
   constructor(serverless, options) {
