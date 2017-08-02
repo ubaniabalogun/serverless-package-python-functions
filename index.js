@@ -119,7 +119,7 @@ class PkgPyFuncs {
   }
 
   ensureImage(){
-    const out = this.runProcess('docker', ['images', '--format','{{.Repository}}:{{.Tag}}']).replace(/^\s+|\s+$/g, '')
+    const out = this.runProcess('docker', ['images', '--format','{{.Repository}}:{{.Tag}}','--filter',`reference=${this.dockerImage}`]).replace(/^\s+|\s+$/g, '')
     if ( out != this.dockerImage ){
       this.log(`Docker Image ${this.dockerImage} is not already installed on your system. Downloading. This might take a while. Subsequent deploys will be faster...`)
       this.runProcess('docker', ['pull', this.dockerImage])
