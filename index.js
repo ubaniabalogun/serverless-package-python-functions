@@ -31,6 +31,7 @@ class PkgPyFuncs {
     this.useDocker = config.useDocker || false
     this.dockerImage = config.dockerImage || `lambci/lambda:build-${this.serverless.service.provider.runtime}`
     this.containerName = config.containerName || 'serverless-package-python-functions'
+    this.mountSSH = config.mountSSH || false
   }
 
   clean(){
@@ -109,11 +110,15 @@ class PkgPyFuncs {
     if ( out === this.containerName ){
       this.log('Container already exists. Reusing.')
     } else {
-      this.runProcess(
-        'docker',
-        ['run', '--rm', '-dt', '-v', `${process.cwd()}:/var/task`,
-          '--name',this.containerName, this.dockerImage, 'bash']
-        )
+      let args = ['run', '--rm', '-dt', '-v', `${process.cwd()}:/var/task`]
+
+      if (this.mountSSH) {
+        args = args.concat(['-v', `${process.env.HOME}/.ssh:/root/.ssh`])
+      }
+
+      args = args.concat(['--name',this.containerName, this.dockerImage, 'bash'])
+
+      this.runProcess('docker', args)
       this.log('Container created')
     }
   }
