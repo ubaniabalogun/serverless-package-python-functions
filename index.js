@@ -51,7 +51,7 @@ class PkgPyFuncs {
   }
 
   selectAll() {
-    const functions = this.serverless.service.functions
+    const functions = _.reject(this.serverless.service.functions, { runtime: 'nodejs6.10' });
     const info = _.map(functions, (target) => {
       return {
         name: target.name,
