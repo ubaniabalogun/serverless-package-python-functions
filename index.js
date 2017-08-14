@@ -23,10 +23,10 @@ class PkgPyFuncs {
     if ( !config ) {
       this.error("No serverless-package-python-functions configuration detected. Please see documentation")
     }
-    config.requirementsFile ? this.requirementsFile = config.requirementsFile  : this.requirementsFile = 'requirements.txt'
+    this.requirementsFile = config.requirementsFile || 'requirements.txt'
     config.buildDir ? this.buildDir = config.buildDir : this.error("No buildDir configuration specified")
-    config.globalRequirements ? this.globalRequirements = config.globalRequirements : this.globalRequirements = null
-    config.globalIncludes ? this.globalIncludes = config.globalIncludes : this.globalIncludes = null
+    this.globalRequirements = config.globalRequirements || []
+    this.globalIncludes = config.globalIncludes || []
     config.cleanup === undefined ? this.cleanup = true : this.cleanup = config.cleanup
     this.useDocker = config.useDocker || false
     this.dockerImage = config.dockerImage || `lambci/lambda:build-${this.serverless.service.provider.runtime}`
@@ -145,7 +145,7 @@ class PkgPyFuncs {
     // Create package directory and package files
     Fse.ensureDirSync(buildPath)
     // Copy includes
-    let includes = target.includes
+    let includes = target.includes || []
     if (this.globalIncludes){
       includes = _.concat(includes, this.globalIncludes)
     }
