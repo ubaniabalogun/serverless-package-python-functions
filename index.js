@@ -51,7 +51,10 @@ class PkgPyFuncs {
   }
 
   selectAll() {
-    const functions = this.serverless.service.functions
+    const functions = _.reject(this.serverless.service.functions, (target) => {
+      return target.runtime && !(target.runtime + '').match(/python/i);
+    });
+
     const info = _.map(functions, (target) => {
       return {
         name: target.name,
