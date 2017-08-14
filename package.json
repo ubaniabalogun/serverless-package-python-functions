@@ -1,6 +1,6 @@
 {
   "name": "serverless-package-python-functions",
-  "version": "0.2.2",
+  "version": "0.2.3",
   "description": "Serverless Framework plugin to package python functions and their requirements",
   "main": "index.js",
   "scripts": {},
