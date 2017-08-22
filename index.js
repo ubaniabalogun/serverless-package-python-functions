@@ -49,6 +49,7 @@ class PkgPyFuncs {
     return true
   }
 
+  // Need to add an option reader to include 'stage' in name of target function name
   selectAll() {
     const functions = this.serverless.service.functions
     const info = _.map(functions, (target) => {
