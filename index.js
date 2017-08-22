@@ -28,6 +28,7 @@ class PkgPyFuncs {
     this.globalRequirements = config.globalRequirements || []
     this.globalIncludes = config.globalIncludes || []
     config.cleanup === undefined ? this.cleanup = true : this.cleanup = config.cleanup
+    this.addStageToFunctionName = config.addStageToFunctionName || false
     this.useDocker = config.useDocker || false
     this.dockerImage = config.dockerImage || `lambci/lambda:build-${this.serverless.service.provider.runtime}`
     this.containerName = config.containerName || 'serverless-package-python-functions'
@@ -49,13 +50,19 @@ class PkgPyFuncs {
     return true
   }
 
-  // Need to add an option reader to include 'stage' in name of target function name
   selectAll() {
     const functions = this.serverless.service.functions
     const info = _.map(functions, (target) => {
-      return {
-        name: target.name,
-        includes: target.package.include
+      if (!this.addStageToFunctionName) {
+        return {
+          name: target.name,
+          includes: target.package.include
+        }
+      } else {
+        return {
+          name: target.name + this.serverless.provider.stage,
+          includes: target.package.include
+        }
       }
     })
     return info
