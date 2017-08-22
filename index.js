@@ -60,7 +60,7 @@ class PkgPyFuncs {
         }
       } else {
         return {
-          name: target.name + this.serverless.provider.stage,
+          name: target.name + "-" + this.serverless.provider.stage,
           includes: target.package.include
         }
       }

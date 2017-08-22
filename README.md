@@ -99,6 +99,7 @@ custom:
     globalIncludes:
       - ./common_files
     cleanup: true
+    addStageToFunctionName: true
 
 functions:
   function1:
