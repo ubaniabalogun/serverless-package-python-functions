@@ -102,7 +102,7 @@ custom:
 
 functions:
   function1:
-    name: function1
+    name: function1-${opt:stage}
     handler: lambda.handler
     package:
       include:
@@ -110,7 +110,7 @@ functions:
       artifact: ${self:custom.pkgPyFuncs.buildDir}/function1.zip
 
   function2:
-    name: function2
+    name: function2-${opt:stage}
     handler: lambda.handler
     package:
       include:
