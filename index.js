@@ -54,7 +54,8 @@ class PkgPyFuncs {
     const info = _.map(functions, (target) => {
       return {
         name: target.name,
-        includes: target.package.include
+        includes: target.package.include,
+	artifact: target.package.artifact
       }
     })
     return info
@@ -139,7 +140,7 @@ class PkgPyFuncs {
   }
 
   makePackage(target){
-    this.log(`Packaging ${target.name}...`)
+    this.log(`Packaging ${target.name} into ${target.artifact}...`)
     const buildPath = Path.join(this.buildDir, target.name)
     const requirementsPath = Path.join(buildPath,this.requirementsFile)
     // Create package directory and package files
@@ -157,7 +158,11 @@ class PkgPyFuncs {
       requirements = _.concat(requirements, this.globalRequirements)
     }
     _.forEach(requirements, (req) => { this.installRequirements(buildPath,req)})
-    zipper.sync.zip(buildPath).compress().save(`${buildPath}.zip`)
+    zipper.sync.zip(buildPath).compress().save(target.artifact)
+    if (this.cleanup) {
+      this.log(`Removing ${buildPath}...`)
+      Fse.removeAsync(buildPath).catch(err => { this.log(err) })
+    }
   }
 
   constructor(serverless, options) {
