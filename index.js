@@ -76,7 +76,7 @@ class PkgPyFuncs {
 
     let upath = require('upath');
     let cmd = 'pip'
-    let args = ['install','--upgrade','-t', upath.normalize(buildPath), '-r', requirementsPath]
+    let args = ['install','--upgrade','-t', upath.normalize(buildPath), '-r', upath.normalize(requirementsPath)]
     if ( this.useDocker === true ){
       cmd = 'docker'
       args = ['exec',this.containerName, 'pip', ...args]
