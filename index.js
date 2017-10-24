@@ -31,6 +31,7 @@ class PkgPyFuncs {
     this.useDocker = config.useDocker || false
     this.dockerImage = config.dockerImage || `lambci/lambda:build-${this.serverless.service.provider.runtime}`
     this.containerName = config.containerName || 'serverless-package-python-functions'
+    this.dockerServicePath = '/var/task'
   }
 
   clean(){
@@ -74,12 +75,13 @@ class PkgPyFuncs {
     }
 
     let cmd = 'pip'
-    let args = ['install','--upgrade','-t', buildPath, '-r', requirementsPath]
     if ( this.useDocker === true ){
       cmd = 'docker'
       args = ['exec',this.containerName, 'pip', ...args]
+      requirementsPath = `${this.dockerServicePath}/${requirementsPath}`
     }
 
+    args = [...args, requirementsPath]
     return this.runProcess(cmd,args)
   }
 
@@ -111,7 +113,7 @@ class PkgPyFuncs {
     } else {
       this.runProcess(
         'docker',
-        ['run', '--rm', '-dt', '-v', `${process.cwd()}:/var/task`,
+        ['run', '--rm', '-dt', '-v', `${process.cwd()}:${this.dockerServicePath}`,
           '--name',this.containerName, this.dockerImage, 'bash']
         )
       this.log('Container created')
