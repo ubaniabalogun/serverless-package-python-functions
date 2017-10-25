@@ -6,6 +6,7 @@ const Fse = require('fs-extra');
 const Path = require('path');
 const ChildProcess = require('child_process');
 const zipper = require('zip-local');
+const upath = require('upath');
 
 BbPromise.promisifyAll(Fse);
 
@@ -74,7 +75,7 @@ class PkgPyFuncs {
     }
 
     let cmd = 'pip'
-    let args = ['install','--upgrade','-t', buildPath, '-r', requirementsPath]
+    let args = ['install','--upgrade','-t', upath.normalize(buildPath), '-r', upath.normalize(requirementsPath)]
     if ( this.useDocker === true ){
       cmd = 'docker'
       args = ['exec',this.containerName, 'pip', ...args]
