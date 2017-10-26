@@ -1,6 +1,6 @@
 {
   "name": "serverless-package-python-functions",
-  "version": "0.2.3",
+  "version": "0.2.4",
   "description": "Serverless Framework plugin to package python functions and their requirements",
   "main": "index.js",
   "scripts": {},
@@ -10,6 +10,7 @@
     "bluebird": "^3.5.0",
     "fs-extra": "^3.0.0",
     "lodash": "^4.17.4",
+    "upath": "^1.0.0",
     "zip-local": "^0.3.4"
   },
   "repository": {
