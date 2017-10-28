@@ -83,6 +83,7 @@ When `serverless deploy` is run, the plugin will:
 The Serverless framework will then pickup each zip file and upload it to your provider.
 
 Here's a simple `serverless.yml` configuration for this plugin, assuming the project structure above
+one of the fuctions we add `-${opt:stage}` to the name in order to append the stage to the function name
 
 ```
 service: your-awesome-project
@@ -102,7 +103,7 @@ custom:
 
 functions:
   function1:
-    name: function1
+    name: function1-${opt:stage}
     handler: lambda.handler
     package:
       include:
