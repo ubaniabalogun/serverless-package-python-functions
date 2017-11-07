@@ -32,6 +32,7 @@ class PkgPyFuncs {
     this.useDocker = config.useDocker || false
     this.dockerImage = config.dockerImage || `lambci/lambda:build-${this.serverless.service.provider.runtime}`
     this.containerName = config.containerName || 'serverless-package-python-functions'
+    this.pipArgs = config.pipCmdExtraArgs || []
   }
 
   clean(){
@@ -76,6 +77,9 @@ class PkgPyFuncs {
 
     let cmd = 'pip'
     let args = ['install','--upgrade','-t', upath.normalize(buildPath), '-r', upath.normalize(requirementsPath)]
+    if (this.pipArgs){
+      args = _.concat(args, this.pipArgs)
+    }
     if ( this.useDocker === true ){
       cmd = 'docker'
       args = ['exec',this.containerName, 'pip', ...args]
