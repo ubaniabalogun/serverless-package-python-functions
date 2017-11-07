@@ -3,6 +3,7 @@
 const BbPromise = require('bluebird');
 const _ = require('lodash');
 const Fse = require('fs-extra');
+const minimatch = require('minimatch')
 const Path = require('path');
 const ChildProcess = require('child_process');
 const zipper = require('zip-local');
@@ -28,10 +29,20 @@ class PkgPyFuncs {
     config.buildDir ? this.buildDir = config.buildDir : this.error("No buildDir configuration specified")
     this.globalRequirements = config.globalRequirements || []
     this.globalIncludes = config.globalIncludes || []
+    this.globalExcludes = config.globalExcludes || []
     config.cleanup === undefined ? this.cleanup = true : this.cleanup = config.cleanup
     this.useDocker = config.useDocker || false
     this.dockerImage = config.dockerImage || `lambci/lambda:build-${this.serverless.service.provider.runtime}`
     this.containerName = config.containerName || 'serverless-package-python-functions'
+    this.pipArgs = config.pipCmdExtraArgs || []
+    
+    this.defaultExcludes = [
+      "**/.serverless",
+      "**/node_modules",
+      "**/requirements.txt",
+      "**/package.json",
+      "**/package-lock.json"
+    ]
   }
 
   clean(){
@@ -76,6 +87,9 @@ class PkgPyFuncs {
 
     let cmd = 'pip'
     let args = ['install','--upgrade','-t', upath.normalize(buildPath), '-r', upath.normalize(requirementsPath)]
+    if (this.pipArgs){
+      args = _.concat(args, this.pipArgs)
+    }
     if ( this.useDocker === true ){
       cmd = 'docker'
       args = ['exec',this.containerName, 'pip', ...args]
@@ -150,7 +164,21 @@ class PkgPyFuncs {
     if (this.globalIncludes){
       includes = _.concat(includes, this.globalIncludes)
     }
-    _.forEach(includes, (item) => { Fse.copySync(item, buildPath) } )
+    let excludes = target.excludes || []
+    excludes = _.concat(excludes, this.defaultExcludes)
+    if (this.globalExcludes){
+      excludes = _.concat(excludes, this.globalExcludes)
+    }
+
+    let filter = (src, dest) => {
+      for(var i = 0; i < excludes.length; i++) {
+        if (minimatch(src, excludes[i])){
+          return false
+        }
+      }
+      return true
+    }
+    _.forEach(includes, (item) => { Fse.copySync(item, buildPath, filter) } )
 
     // Install requirements
     let requirements = [requirementsPath]
