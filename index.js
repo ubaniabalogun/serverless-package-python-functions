@@ -144,8 +144,6 @@ class PkgPyFuncs {
   }
 
   makePackage(target){
-    this.log(`Packaging ${target.name}...`)
-
     const buildPath = Path.join(this.buildDir, target.name)
     const requirementsPath = Path.join(buildPath, this.requirementsFile)
     const requirePackages = target.requirePackages;
@@ -154,27 +152,29 @@ class PkgPyFuncs {
     Fse.ensureDirSync(buildPath)
 
     // Write require package to <function folder>/requirements.txt
-    if(requirePackages.length > 0) {
+    if(requirePackages && requirePackages.length > 0) {
       Fse.writeFileSync(buildPath + '/requirements.txt', '')
       requirePackages.forEach(x => {
         Fse.appendFileSync(buildPath + '/requirements.txt', x + '\n')
       });
     }
 
+    let logStr = target.requirePackages ? `with packages: ${target.requirePackages}` : ''
+    this.log(`Packaging ${target.name}... ${logStr}`)
+
     // Copy includes
     let includes = target.includes || []
 
     // Global Includes
-    if(this.globalIncludes.length > 0) {
-      this.log("Add Global Includes")
+    if(this.globalIncludes && this.globalIncludes.length > 0) {
+      this.log("Add Global Includes...")
       _.forEach(this.globalIncludes, (item) => {
-        this.log(`Global include path: ${Path.resolve(buildPath, item)}`)
         Fse.copySync(item, Path.resolve(buildPath, item))
       })
     }
 
     // Functions Include
-    this.log("Add Functions Includes")
+    this.log("Add Functions Includes...")
     _.forEach(includes, (item) => {
       if(Fse.lstatSync(Path.resolve(item)).isDirectory()) {
         Fse.copySync(item, Path.resolve(buildPath)) 
