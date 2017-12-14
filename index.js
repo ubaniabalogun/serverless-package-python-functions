@@ -56,6 +56,7 @@ class PkgPyFuncs {
     const info = _.map(functions, (target) => {
       return {
         name: target.name,
+        requirePackages: target.requirePackages,
         includes: target.package.include
       }
     })
@@ -63,7 +64,7 @@ class PkgPyFuncs {
   }
 
 
-  installRequirements(buildPath,requirementsPath){
+  installRequirements(buildPath, requirementsPath){
 
     if ( !Fse.pathExistsSync(requirementsPath) ) {
       return
@@ -144,23 +145,53 @@ class PkgPyFuncs {
 
   makePackage(target){
     this.log(`Packaging ${target.name}...`)
+
     const buildPath = Path.join(this.buildDir, target.name)
-    const requirementsPath = Path.join(buildPath,this.requirementsFile)
+    const requirementsPath = Path.join(buildPath, this.requirementsFile)
+    const requirePackages = target.requirePackages;
+
     // Create package directory and package files
     Fse.ensureDirSync(buildPath)
+
+    // Write require package to <function folder>/requirements.txt
+    if(requirePackages.length > 0) {
+      Fse.writeFileSync(buildPath + '/requirements.txt', '')
+      requirePackages.forEach(x => {
+        Fse.appendFileSync(buildPath + '/requirements.txt', x + '\n')
+      });
+    }
+
     // Copy includes
     let includes = target.includes || []
-    if (this.globalIncludes){
-      includes = _.concat(includes, this.globalIncludes)
+
+    // Global Includes
+    if(this.globalIncludes.length > 0) {
+      this.log("Add Global Includes")
+      _.forEach(this.globalIncludes, (item) => {
+        this.log(`Global include path: ${Path.resolve(buildPath, item)}`)
+        Fse.copySync(item, Path.resolve(buildPath, item))
+      })
     }
-    _.forEach(includes, (item) => { Fse.copySync(item, buildPath) } )
+
+    // Functions Include
+    this.log("Add Functions Includes")
+    _.forEach(includes, (item) => {
+      if(Fse.lstatSync(Path.resolve(item)).isDirectory()) {
+        Fse.copySync(item, Path.resolve(buildPath)) 
+      } else {
+        Fse.copySync(item, Path.resolve(buildPath, item)) 
+      }
+    })
 
     // Install requirements
     let requirements = [requirementsPath]
-    if (this.globalRequirements){
+    if (this.globalRequirements) {
       requirements = _.concat(requirements, this.globalRequirements)
     }
-    _.forEach(requirements, (req) => { this.installRequirements(buildPath,req)})
+
+    _.forEach(requirements, (req) => {
+      this.installRequirements(buildPath, req)
+    })
     zipper.sync.zip(buildPath).compress().save(`${buildPath}.zip`)
   }
 
