@@ -53,12 +53,16 @@ class PkgPyFuncs {
 
   selectAll() {
     const functions = this.serverless.service.functions
-    const info = _.map(functions, (target) => {
-      return {
-        name: target.name,
-        includes: target.package.include
+    const info = _.reduce(functions, (result, target) => {
+      const runtime = target.runtime || this.serverless.service.provider.runtime;
+      if (runtime.startsWith('python')) {
+        result.push({
+          name: target.name,
+          includes: target.package.include
+        })
       }
-    })
+      return result;
+    }, [])
     return info
   }
 
