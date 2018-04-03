@@ -182,7 +182,7 @@ class PkgPyFuncs {
     // Install requirements
     let requirements = [requirementsPath]
     if (this.globalRequirements){
-      requirements = _.concat(requirements, this.globalRequirements)
+      requirements = _.concat(this.globalRequirements, requirements)
     }
     _.forEach(requirements, (req) => { this.installRequirements(buildPath,req)})
     zipper.sync.zip(buildPath).compress().save(`${buildPath}.zip`)
