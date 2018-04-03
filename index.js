@@ -39,7 +39,6 @@ class PkgPyFuncs {
     this.defaultExcludes = [
       "**/.serverless",
       "**/node_modules",
-      "**/requirements.txt",
       "**/package.json",
       "**/package-lock.json"
     ]
