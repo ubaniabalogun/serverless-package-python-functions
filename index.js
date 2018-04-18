@@ -85,7 +85,7 @@ class PkgPyFuncs {
     }
 
     let cmd = 'pip'
-    let args = ['install','--upgrade','-t', upath.normalize(buildPath), '-r', upath.normalize(requirementsPath)]
+    let args = ['install','--disable-pip-version-check','--upgrade','-t', upath.normalize(buildPath), '-r', upath.normalize(requirementsPath)]
     if (this.pipArgs){
       args = _.concat(args, this.pipArgs)
     }
