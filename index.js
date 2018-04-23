@@ -85,7 +85,14 @@ class PkgPyFuncs {
     }
 
     let cmd = 'pip'
-    let args = ['install','--disable-pip-version-check','--no-warn-conflicts','--upgrade','-t', upath.normalize(buildPath), '-r', upath.normalize(requirementsPath)]
+    const out = this.runProcess(cmd, ['-V'])
+    const pipVersion = out.split(" ")[1]
+
+    let args = ['install','--disable-pip-version-check','--upgrade','-t', upath.normalize(buildPath), '-r', upath.normalize(requirementsPath)]
+    if (pipVersion.split('.')[0] >= 10) {
+      args.push('--no-warn-conflicts')
+    }
+    let args = ['install','--disable-pip-version-check','--upgrade','-t', upath.normalize(buildPath), '-r', upath.normalize(requirementsPath)]
     if (this.pipArgs){
       args = _.concat(args, this.pipArgs)
     }
