@@ -92,7 +92,6 @@ class PkgPyFuncs {
     if (pipVersion.split('.')[0] >= 10) {
       args.push('--no-warn-conflicts')
     }
-    let args = ['install','--disable-pip-version-check','--upgrade','-t', upath.normalize(buildPath), '-r', upath.normalize(requirementsPath)]
     if (this.pipArgs){
       args = _.concat(args, this.pipArgs)
     }
