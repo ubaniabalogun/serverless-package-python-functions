@@ -35,7 +35,7 @@ class PkgPyFuncs {
     this.dockerImage = config.dockerImage || `lambci/lambda:build-${this.serverless.service.provider.runtime}`
     this.containerName = config.containerName || 'serverless-package-python-functions'
     this.pipArgs = config.pipCmdExtraArgs || []
-    
+
     this.defaultExcludes = [
       "**/.serverless",
       "**/node_modules",
@@ -61,7 +61,7 @@ class PkgPyFuncs {
   }
 
   selectAll() {
-    const functions = this.serverless.service.functions
+    const functions = _.pickBy(this.serverless.service.functions, (value, key) => !this.options.function || key === this.options.function )
     const info = _.map(functions, (target) => {
       return {
         name: target.name,
@@ -206,7 +206,12 @@ class PkgPyFuncs {
         .then(this.setupDocker)
         .then(this.selectAll)
         .map(this.makePackage),
-
+      'deploy:function:packageFunction': () => BbPromise.bind(this)
+        .then(this.fetchConfig)
+        .then( () => { Fse.ensureDirAsync(this.buildDir) })
+        .then(this.setupDocker)
+        .then(this.selectAll)
+        .map(this.makePackage),
       'after:deploy:deploy': () => BbPromise.bind(this)
         .then(this.clean)
     };
