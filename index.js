@@ -32,6 +32,7 @@ class PkgPyFuncs {
     this.useDocker = config.useDocker || false
     this.dockerImage = config.dockerImage || `lambci/lambda:build-${this.serverless.service.provider.runtime}`
     this.containerName = config.containerName || 'serverless-package-python-functions'
+    this.mountSSH = config.mountSSH || false
     this.dockerServicePath = '/var/task'
   }
 
@@ -52,7 +53,10 @@ class PkgPyFuncs {
   }
 
   selectAll() {
-    const functions = this.serverless.service.functions
+    const functions = _.reject(this.serverless.service.functions, (target) => {
+      return target.runtime && !(target.runtime + '').match(/python/i);
+    });
+
     const info = _.map(functions, (target) => {
       return {
         name: target.name,
@@ -113,11 +117,14 @@ class PkgPyFuncs {
     if ( out === this.containerName ){
       this.log('Container already exists. Reusing.')
     } else {
-      this.runProcess(
-        'docker',
-        ['run', '--rm', '-dt', '-v', `${process.cwd()}:${this.dockerServicePath}`,
-          '--name',this.containerName, this.dockerImage, 'bash']
-        )
+      let args = ['run', '--rm', '-dt', '-v', `${process.cwd()}:${this.dockerServicePath}`]
+      
+      if (this.mountSSH) {
+        args = args.concat(['-v', `${process.env.HOME}/.ssh:/root/.ssh`])
+      }
+      
+      args = args.concat(['--name',this.containerName, this.dockerImage, 'bash'])
+      this.runProcess('docker', args)
       this.log('Container created')
     }
   }
