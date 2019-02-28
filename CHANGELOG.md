@@ -17,3 +17,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 
 ### Removed
+
+
+## [0.2.4] - 2017-10-24
+### Added
+- Normalized path for building on windows courtesy @wsteimel77
+
+## [0.2.5] - 2017-11-11
+- Bug fix for #21 courtesy @JFox

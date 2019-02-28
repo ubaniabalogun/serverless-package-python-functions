@@ -6,6 +6,7 @@ const Fse = require('fs-extra');
 const Path = require('path');
 const ChildProcess = require('child_process');
 const zipper = require('zip-local');
+const upath = require('upath');
 
 BbPromise.promisifyAll(Fse);
 
@@ -23,15 +24,16 @@ class PkgPyFuncs {
     if ( !config ) {
       this.error("No serverless-package-python-functions configuration detected. Please see documentation")
     }
-    config.requirementsFile ? this.requirementsFile = config.requirementsFile  : this.requirementsFile = 'requirements.txt'
+    this.requirementsFile = config.requirementsFile || 'requirements.txt'
     config.buildDir ? this.buildDir = config.buildDir : this.error("No buildDir configuration specified")
-    config.globalRequirements ? this.globalRequirements = config.globalRequirements : this.globalRequirements = null
-    config.globalIncludes ? this.globalIncludes = config.globalIncludes : this.globalIncludes = null
+    this.globalRequirements = config.globalRequirements || []
+    this.globalIncludes = config.globalIncludes || []
     config.cleanup === undefined ? this.cleanup = true : this.cleanup = config.cleanup
     this.useDocker = config.useDocker || false
     this.dockerImage = config.dockerImage || `lambci/lambda:build-${this.serverless.service.provider.runtime}`
     this.containerName = config.containerName || 'serverless-package-python-functions'
     this.mountSSH = config.mountSSH || false
+    this.dockerServicePath = '/var/task'
   }
 
   clean(){
@@ -78,13 +80,15 @@ class PkgPyFuncs {
     }
 
     let cmd = 'pip'
-    let args = ['install','--upgrade','-t', buildPath, '-r', requirementsPath]
+    let args = ['install','--upgrade','-t', upath.normalize(buildPath), '-r']
     if ( this.useDocker === true ){
       cmd = 'docker'
-      args = ['exec',this.containerName, 'pip', ...args]
+      args = ['exec', this.containerName, 'pip', ...args]
+      requirementsPath = `${this.dockerServicePath}/${requirementsPath}`
     }
 
-    return this.runProcess(cmd,args)
+    args = [...args, upath.normalize(requirementsPath)]
+    return this.runProcess(cmd, args)
   }
 
   checkDocker(){
@@ -99,7 +103,7 @@ class PkgPyFuncs {
     }
 
     if (ret.stderr.length != 0){
-      throw new this.serverless.classes.Error(`[serverless-package-python-functions] ${ret.stderr.toString()}`)
+      this.log(ret.stderr.toString())
     }
 
     const out = ret.stdout.toString()
@@ -113,14 +117,13 @@ class PkgPyFuncs {
     if ( out === this.containerName ){
       this.log('Container already exists. Reusing.')
     } else {
-      let args = ['run', '--rm', '-dt', '-v', `${process.cwd()}:/var/task`]
-
+      let args = ['run', '--rm', '-dt', '-v', `${process.cwd()}:${this.dockerServicePath}`]
+      
       if (this.mountSSH) {
         args = args.concat(['-v', `${process.env.HOME}/.ssh:/root/.ssh`])
       }
-
+      
       args = args.concat(['--name',this.containerName, this.dockerImage, 'bash'])
-
       this.runProcess('docker', args)
       this.log('Container created')
     }
@@ -153,7 +156,7 @@ class PkgPyFuncs {
     // Create package directory and package files
     Fse.ensureDirSync(buildPath)
     // Copy includes
-    let includes = target.includes
+    let includes = target.includes || []
     if (this.globalIncludes){
       includes = _.concat(includes, this.globalIncludes)
     }
