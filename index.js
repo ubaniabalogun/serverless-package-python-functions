@@ -14,7 +14,6 @@ BbPromise.promisifyAll(Fse);
 class PkgPyFuncs {
 
   fetchConfig(){
-
     if (!this.serverless.service.custom){
       this.error("No serverless custom configurations are defined")
     }
@@ -34,6 +33,14 @@ class PkgPyFuncs {
     this.containerName = config.containerName || 'serverless-package-python-functions'
     this.mountSSH = config.mountSSH || false
     this.dockerServicePath = '/var/task'
+  }
+
+  autoconfigArtifacts() {
+    _.map(this.serverless.service.functions, (func_config, func_name) => {
+      let autoArtifact = `${this.buildDir}/${func_name}.zip`
+      func_config.package.artifact = func_config.package.artifact || autoArtifact
+      this.serverless.service.functions[func_name] = func_config
+    })
   }
 
   clean(){
@@ -58,14 +65,16 @@ class PkgPyFuncs {
     });
 
     const info = _.map(functions, (target) => {
+
+
       return {
         name: target.name,
-        includes: target.package.include
+        includes: target.package.include,
+        artifact: target.package.artifact
       }
     })
     return info
   }
-
 
   installRequirements(buildPath,requirementsPath){
 
@@ -118,11 +127,11 @@ class PkgPyFuncs {
       this.log('Container already exists. Reusing.')
     } else {
       let args = ['run', '--rm', '-dt', '-v', `${process.cwd()}:${this.dockerServicePath}`]
-      
+
       if (this.mountSSH) {
         args = args.concat(['-v', `${process.env.HOME}/.ssh:/root/.ssh`])
       }
-      
+
       args = args.concat(['--name',this.containerName, this.dockerImage, 'bash'])
       this.runProcess('docker', args)
       this.log('Container created')
@@ -171,14 +180,20 @@ class PkgPyFuncs {
     zipper.sync.zip(buildPath).compress().save(`${buildPath}.zip`)
   }
 
+
+
   constructor(serverless, options) {
     this.serverless = serverless;
     this.options = options;
     this.log = (msg) => { this.serverless.cli.log(`[serverless-package-python-functions] ${msg}`) }
     this.error = (msg) => { throw new Error(`[serverless-package-python-functions] ${msg}`) }
+
+
+
     this.hooks = {
       'before:package:createDeploymentArtifacts': () => BbPromise.bind(this)
         .then(this.fetchConfig)
+        .then(this.autoconfigArtifacts)
         .then( () => { Fse.ensureDirAsync(this.buildDir) })
         .then(this.setupDocker)
         .then(this.selectAll)
