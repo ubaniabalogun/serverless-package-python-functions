@@ -37,7 +37,7 @@ class PkgPyFuncs {
 
   autoconfigArtifacts() {
     _.map(this.serverless.service.functions, (func_config, func_name) => {
-      let autoArtifact = `${this.buildDir}/${func_name}.zip`
+      let autoArtifact = `${this.buildDir}/${func_config.name}.zip`
       func_config.package.artifact = func_config.package.artifact || autoArtifact
       this.serverless.service.functions[func_name] = func_config
     })
