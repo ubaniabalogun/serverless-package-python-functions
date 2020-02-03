@@ -107,12 +107,18 @@ class PkgPyFuncs {
 
   runProcess(cmd,args){
     const ret = ChildProcess.spawnSync(cmd,args)
+
     if (ret.error){
       throw new this.serverless.classes.Error(`[serverless-package-python-functions] ${ret.error.message}`)
     }
 
     if (ret.stderr.length != 0){
-      this.log(ret.stderr.toString())
+      const errorText = ret.stderr.toString().trim()
+      if (errorText.toLowerCase().search('error') != -1){
+        this.log(errorText)
+        console.log(errorText)
+        this.error(errorText)
+      }
     }
 
     const out = ret.stdout.toString()
@@ -167,6 +173,8 @@ class PkgPyFuncs {
     // Copy includes
     let includes = target.includes || []
     if (this.globalIncludes){
+      console.log('includes')
+      console.log(includes)
       includes = _.concat(includes, this.globalIncludes)
     }
     _.forEach(includes, (item) => { Fse.copySync(item, buildPath) } )
