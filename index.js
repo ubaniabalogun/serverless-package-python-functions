@@ -89,7 +89,7 @@ class PkgPyFuncs {
     }
 
     let cmd = 'pip'
-    let args = ['install','--upgrade','-t', upath.normalize(buildPath), '-r']
+    let args = ['install', '--upgrade','-t', upath.normalize(buildPath), '-r']
     if ( this.useDocker === true ){
       cmd = 'docker'
       args = ['exec', this.containerName, 'pip', ...args]
@@ -107,23 +107,25 @@ class PkgPyFuncs {
 
   runProcess(cmd,args){
     const ret = ChildProcess.spawnSync(cmd,args)
-
     if (ret.error){
       throw new this.serverless.classes.Error(`[serverless-package-python-functions] ${ret.error.message}`)
     }
 
     if (ret.stderr.length != 0){
       const errorText = ret.stderr.toString().trim()
-      if (errorText.toLowerCase().search('error') != -1){
-        this.log(errorText)
-        console.log(errorText)
-        this.error(errorText)
-      }
+      console.log(errorText)
+      this.error(errorText)
+      // if (errorText.toLowerCase().search('error') != -1){
+      //   this.log(errorText)
+      //   console.log(errorText)
+      //   this.error(errorText)
+      // }
     }
 
     const out = ret.stdout.toString()
     return out
   }
+
 
   setupContainer(){
     let out = this.runProcess('docker',['ps', '-a', '--filter',`name=${this.containerName}`,'--format','{{.Names}}'])
@@ -173,8 +175,6 @@ class PkgPyFuncs {
     // Copy includes
     let includes = target.includes || []
     if (this.globalIncludes){
-      console.log('includes')
-      console.log(includes)
       includes = _.concat(includes, this.globalIncludes)
     }
     _.forEach(includes, (item) => { Fse.copySync(item, buildPath) } )
