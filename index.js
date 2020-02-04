@@ -7,6 +7,7 @@ const Path = require('path');
 const ChildProcess = require('child_process');
 const zipper = require('zip-local');
 const upath = require('upath');
+const readlineSync = require('readline-sync');
 
 BbPromise.promisifyAll(Fse);
 
@@ -89,7 +90,7 @@ class PkgPyFuncs {
     }
 
     let cmd = 'pip'
-    let args = ['install', '--upgrade','-t', upath.normalize(buildPath), '-r']
+    let args = ['install', '-t', upath.normalize(buildPath), '-qq', '-r']
     if ( this.useDocker === true ){
       cmd = 'docker'
       args = ['exec', this.containerName, 'pip', ...args]
@@ -111,25 +112,51 @@ class PkgPyFuncs {
       throw new this.serverless.classes.Error(`[serverless-package-python-functions] ${ret.error.message}`)
     }
 
+    const out = ret.stdout.toString()
+
     if (ret.stderr.length != 0){
       const errorText = ret.stderr.toString().trim()
-      console.log(errorText)
-      this.error(errorText)
-      // if (errorText.toLowerCase().search('error') != -1){
-      //   this.log(errorText)
-      //   console.log(errorText)
-      //   this.error(errorText)
-      // }
+      const countErrorNewLines = errorText.split('\n').length
+
+      if(countErrorNewLines < 2 && errorText.toLowerCase().includes('git clone')){
+        // Ignore false positive due to pip git clone printing to stderr
+        console.log(errorText)
+      } else if(errorText.toLowerCase().includes('docker')){
+        console.log('stdout:', out)
+        console.log('stderr: ', errorText)
+        this.error("Docker Error Detected")
+
+      } else {
+        // Error is not false positive, 
+        console.log('___ERROR DETECTED, BEGIN STDOUT____\n', out)
+        console.log('---BEGIN STDERR---\n', errorText)
+        this.requestUserConfirmation()
+      }
+
     }
 
-    const out = ret.stdout.toString()
     return out
   }
 
+  requestUserConfirmation(prompt="\n\n??? Do you wish to continue deployment with the stated errors? \n",
+                          yesText="Continuing Deployment!",
+                          noText='ABORTING DEPLOYMENT'
+                          ){
+    const response = readlineSync.question(prompt);
+    if(response.toLowerCase().includes('y')) {
+      console.log(yesText);
+      return
+    } else {
+      console.log(noText)
+      this.error('Aborting')
+      return
+    }
+  }
 
   setupContainer(){
     let out = this.runProcess('docker',['ps', '-a', '--filter',`name=${this.containerName}`,'--format','{{.Names}}'])
     out = out.replace(/^\s+|\s+$/g, '')
+    console.log('SDLFKJSDL:KFJSDL:KFJ ', this.containerName)
 
     if ( out === this.containerName ){
       this.log('Container already exists. Reusing.')
