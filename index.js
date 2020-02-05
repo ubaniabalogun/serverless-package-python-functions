@@ -90,7 +90,7 @@ class PkgPyFuncs {
     }
 
     let cmd = 'pip'
-    let args = ['install', '-t', upath.normalize(buildPath), '-qq', '-r']
+    let args = ['install', '--upgrade', '-t', upath.normalize(buildPath), '-r']
     if ( this.useDocker === true ){
       cmd = 'docker'
       args = ['exec', this.containerName, 'pip', ...args]
@@ -116,20 +116,18 @@ class PkgPyFuncs {
 
     if (ret.stderr.length != 0){
       const errorText = ret.stderr.toString().trim()
+      this.log(errorText) // prints stderr
       const countErrorNewLines = errorText.split('\n').length
 
       if(countErrorNewLines < 2 && errorText.toLowerCase().includes('git clone')){
         // Ignore false positive due to pip git clone printing to stderr
-        console.log(errorText)
       } else if(errorText.toLowerCase().includes('docker')){
         console.log('stdout:', out)
-        console.log('stderr: ', errorText)
         this.error("Docker Error Detected")
 
       } else {
         // Error is not false positive, 
         console.log('___ERROR DETECTED, BEGIN STDOUT____\n', out)
-        console.log('---BEGIN STDERR---\n', errorText)
         this.requestUserConfirmation()
       }
 
@@ -156,7 +154,6 @@ class PkgPyFuncs {
   setupContainer(){
     let out = this.runProcess('docker',['ps', '-a', '--filter',`name=${this.containerName}`,'--format','{{.Names}}'])
     out = out.replace(/^\s+|\s+$/g, '')
-    console.log('SDLFKJSDL:KFJSDL:KFJ ', this.containerName)
 
     if ( out === this.containerName ){
       this.log('Container already exists. Reusing.')
