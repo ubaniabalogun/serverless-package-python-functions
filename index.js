@@ -33,7 +33,7 @@ class PkgPyFuncs {
     this.dockerImage = config.dockerImage || `lambci/lambda:build-${this.serverless.service.provider.runtime}`
     this.containerName = config.containerName || 'serverless-package-python-functions'
     this.mountSSH = config.mountSSH || false
-    this.usePackagingErrorAlerts = config.usePackagingErrorAlerts || false
+    this.abortOnPackagingErrors = config.abortOnPackagingErrors || false
     this.dockerServicePath = '/var/task'
   }
 
@@ -119,7 +119,7 @@ class PkgPyFuncs {
       const errorText = ret.stderr.toString().trim()
       this.log(errorText) // prints stderr
 
-      if (this.usePackagingErrorAlerts){
+      if (this.abortOnPackagingErrors){
         const countErrorNewLines = errorText.split('\n').length
 
         if(countErrorNewLines < 2 && errorText.toLowerCase().includes('git clone')){
