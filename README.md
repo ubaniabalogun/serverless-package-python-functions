@@ -133,6 +133,7 @@ The plugin configurations are simple:
 | useDocker          | Boolean indicating whether to package pip dependencies using Docker. Set this to true if your project uses platform-specific compiled libraries like numpy. Requires a [Docker installation](https://www.docker.com/get-docker).                        | Yes. Defaults to `false`                                   |
 | dockerImage        | The Docker image to use to compile functions if `useDocker` is set to `true`. Must be specified as `repository:tag`. If the image doesn't exist on the system, it will be downloaded. The initial download may take some time.                            | Yes. Defaults to `lambci/lambda:build-${provider.runtime}` |
 | containerName      | The desired name for the Docker container.                                                                                                                                                                         | Yes. Defaults to `serverless-package-python-functions`     |
+| usePackagingErrorAlerts | Boolean indicating whether you want to stop deployment when packaging errors are detected. Example errors include: `useDocker` is enabled but the Docker service is not running, pip finds dependency mismatches, virtual environment errrors, etc.. When an error is detected, this will prompt via commandline to continue or abort deploy. | Yes. Defaults to `false` |
 
 At the function level, you:
 - Specify `name` to give your function a name. The plugin uses the function's name as the name of the zip artifact

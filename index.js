@@ -33,6 +33,7 @@ class PkgPyFuncs {
     this.dockerImage = config.dockerImage || `lambci/lambda:build-${this.serverless.service.provider.runtime}`
     this.containerName = config.containerName || 'serverless-package-python-functions'
     this.mountSSH = config.mountSSH || false
+    this.usePackagingErrorAlerts = config.usePackagingErrorAlerts || false
     this.dockerServicePath = '/var/task'
   }
 
@@ -117,18 +118,21 @@ class PkgPyFuncs {
     if (ret.stderr.length != 0){
       const errorText = ret.stderr.toString().trim()
       this.log(errorText) // prints stderr
-      const countErrorNewLines = errorText.split('\n').length
 
-      if(countErrorNewLines < 2 && errorText.toLowerCase().includes('git clone')){
-        // Ignore false positive due to pip git clone printing to stderr
-      } else if(errorText.toLowerCase().includes('docker')){
-        console.log('stdout:', out)
-        this.error("Docker Error Detected")
+      if (this.usePackagingErrorAlerts){
+        const countErrorNewLines = errorText.split('\n').length
 
-      } else {
-        // Error is not false positive, 
-        console.log('___ERROR DETECTED, BEGIN STDOUT____\n', out)
-        this.requestUserConfirmation()
+        if(countErrorNewLines < 2 && errorText.toLowerCase().includes('git clone')){
+          // Ignore false positive due to pip git clone printing to stderr
+        } else if(errorText.toLowerCase().includes('docker')){
+          console.log('stdout:', out)
+          this.error("Docker Error Detected")
+
+        } else {
+          // Error is not false positive, 
+          console.log('___ERROR DETECTED, BEGIN STDOUT____\n', out)
+          this.requestUserConfirmation()
+        }
       }
 
     }
