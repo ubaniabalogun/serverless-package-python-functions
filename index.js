@@ -124,10 +124,11 @@ class PkgPyFuncs {
 
         if(countErrorNewLines < 2 && errorText.toLowerCase().includes('git clone')){
           // Ignore false positive due to pip git clone printing to stderr
+        } else if(errorText.toLowerCase().includes('warning') && !errorText.toLowerCase().includes('error')){
+          // Ignore warnings
         } else if(errorText.toLowerCase().includes('docker')){
           console.log('stdout:', out)
           this.error("Docker Error Detected")
-
         } else {
           // Error is not false positive, 
           console.log('___ERROR DETECTED, BEGIN STDOUT____\n', out)
