@@ -127,7 +127,11 @@ class PkgPyFuncs {
           console.log('stdout:', out)
           this.error("Docker Error Detected")
         } else {
+<<<<<<< HEAD
           // Error is not false positive,
+=======
+          // Error is not false positive,
+>>>>>>> upstream/master
           console.log('___ERROR DETECTED, BEGIN STDOUT____\n', out)
           this.requestUserConfirmation()
         }
