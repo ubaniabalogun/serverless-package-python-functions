@@ -7,10 +7,10 @@
   "author": "Ubani Balogun",
   "license": "ISC",
   "dependencies": {
-    "bluebird": "^3.5.0",
-    "fs-extra": "^3.0.0",
-    "lodash": "^4.17.11",
-    "upath": "^1.1.0",
+    "bluebird": "^3.7.2",
+    "fs-extra": "^9.0.1",
+    "lodash": "^4.17.19",
+    "upath": "^1.2.0",
     "readline-sync": "^1.4.10",
     "zip-local": "^0.3.4"
   },
