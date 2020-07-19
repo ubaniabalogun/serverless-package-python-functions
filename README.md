@@ -83,11 +83,14 @@ When `serverless deploy` is run, the plugin will:
 The Serverless framework will then pickup each zip file and upload it to your provider.
 
 Here's a simple `serverless.yml` configuration for this plugin, assuming the project structure above
-one of the fuctions we add `-${opt:stage}` to the name in order to append the stage to the function name
+one of the functions we add `-${opt:stage}` to the name in order to append the stage to the function name
 
 ```
 service: your-awesome-project
 
+package:
+    individually: true
+    
 plugins:
   - serverless-package-python-functions
 
@@ -130,11 +133,15 @@ The plugin configurations are simple:
 | useDocker          | Boolean indicating whether to package pip dependencies using Docker. Set this to true if your project uses platform-specific compiled libraries like numpy. Requires a [Docker installation](https://www.docker.com/get-docker).                        | Yes. Defaults to `false`                                   |
 | dockerImage        | The Docker image to use to compile functions if `useDocker` is set to `true`. Must be specified as `repository:tag`. If the image doesn't exist on the system, it will be downloaded. The initial download may take some time.                            | Yes. Defaults to `lambci/lambda:build-${provider.runtime}` |
 | containerName      | The desired name for the Docker container.                                                                                                                                                                         | Yes. Defaults to `serverless-package-python-functions`     |
+| abortOnPackagingErrors | Boolean indicating whether you want to stop deployment when packaging errors are detected. Examples of scenarios that will cause packaging errors include: `useDocker` is enabled but the Docker service is not running, pip finds dependency mismatches, virtual environment errrors, etc.. When an error is detected, this will prompt via commandline to continue or abort deploy. | Yes. Defaults to `false` |
 
 At the function level, you:
 - Specify `name` to give your function a name. The plugin uses the function's name as the name of the zip artifact
 - Use `include` to specify what function-level files you want to include in your artifact. Simply specifying the path to the function's folder will include every file in the folder in the function's zip artifact
 - Use `artifact` to tell Serverless where to find the zip artifact. The plugin creates the zip artifact for the function at `buildDir`/`name`.zip, so using `${self:custom.pkgPyFuncs.buildDir}/[function-name-here].zip` is advised.
+
+At the package level, you may need to:
+- Specify the `individually` parameter as `true` to ensure that zip artifacts are generated properly. You may need this if you are getting file not found errors about your zip artifact.
 
 Now, you may be wondering, doesn't the [Serverless documentation say](https://serverless.com/framework/docs/providers/aws/guide/packaging#artifact):
 > Serverless won't zip your service if [artifact] is configured and therefore exclude and include will be ignored. Either you use artifact or include / exclude.
