@@ -7,6 +7,7 @@ const Path = require('path');
 const ChildProcess = require('child_process');
 const zipper = require('zip-local');
 const upath = require('upath');
+const readlineSync = require('readline-sync');
 
 BbPromise.promisifyAll(Fse);
 
@@ -14,7 +15,6 @@ BbPromise.promisifyAll(Fse);
 class PkgPyFuncs {
 
   fetchConfig(){
-
     if (!this.serverless.service.custom){
       this.error("No serverless custom configurations are defined")
     }
@@ -32,7 +32,17 @@ class PkgPyFuncs {
     this.useDocker = config.useDocker || false
     this.dockerImage = config.dockerImage || `lambci/lambda:build-${this.serverless.service.provider.runtime}`
     this.containerName = config.containerName || 'serverless-package-python-functions'
+    this.mountSSH = config.mountSSH || false
+    this.abortOnPackagingErrors = config.abortOnPackagingErrors || false
     this.dockerServicePath = '/var/task'
+  }
+
+  autoconfigArtifacts() {
+    _.map(this.serverless.service.functions, (func_config, func_name) => {
+      let autoArtifact = `${this.buildDir}/${func_config.name}.zip`
+      func_config.package.artifact = func_config.package.artifact || autoArtifact
+      this.serverless.service.functions[func_name] = func_config
+    })
   }
 
   clean(){
@@ -52,20 +62,18 @@ class PkgPyFuncs {
   }
 
   selectAll() {
-    const functions = this.serverless.service.functions
-    const info = _.reduce(functions, (result, target) => {
-      const runtime = target.runtime || this.serverless.service.provider.runtime;
-      if (runtime.startsWith('python')) {
-        result.push({
-          name: target.name,
-          includes: target.package.include
-        })
+    const functions = _.reject(this.serverless.service.functions, (target) => {
+      return target.runtime && !(target.runtime + '').match(/python/i);
+    });
+    const info = _.map(functions, (target) => {
+      return {
+        name: target.name,
+        includes: target.package.include,
+        artifact: target.package.artifact
       }
-      return result;
     }, [])
     return info
   }
-
 
   installRequirements(buildPath,requirementsPath){
 
@@ -80,7 +88,7 @@ class PkgPyFuncs {
     }
 
     let cmd = 'pip'
-    let args = ['install','--upgrade','-t', upath.normalize(buildPath), '-r']
+    let args = ['install', '--upgrade', '-t', upath.normalize(buildPath), '-r']
     if ( this.useDocker === true ){
       cmd = 'docker'
       args = ['exec', this.containerName, 'pip', ...args]
@@ -102,12 +110,47 @@ class PkgPyFuncs {
       throw new this.serverless.classes.Error(`[serverless-package-python-functions] ${ret.error.message}`)
     }
 
+    const out = ret.stdout.toString()
+
     if (ret.stderr.length != 0){
-      throw new this.serverless.classes.Error(`[serverless-package-python-functions] ${ret.stderr.toString()}`)
+      const errorText = ret.stderr.toString().trim()
+      this.log(errorText) // prints stderr
+
+      if (this.abortOnPackagingErrors){
+        const countErrorNewLines = errorText.split('\n').length
+
+        if(countErrorNewLines < 2 && errorText.toLowerCase().includes('git clone')){
+          // Ignore false positive due to pip git clone printing to stderr
+        } else if(errorText.toLowerCase().includes('warning') && !errorText.toLowerCase().includes('error')){
+          // Ignore warnings
+        } else if(errorText.toLowerCase().includes('docker')){
+          console.log('stdout:', out)
+          this.error("Docker Error Detected")
+        } else {
+          // Error is not false positive,
+          console.log('___ERROR DETECTED, BEGIN STDOUT____\n', out)
+          this.requestUserConfirmation()
+        }
+      }
+
     }
 
-    const out = ret.stdout.toString()
     return out
+  }
+
+  requestUserConfirmation(prompt="\n\n??? Do you wish to continue deployment with the stated errors? \n",
+                          yesText="Continuing Deployment!",
+                          noText='ABORTING DEPLOYMENT'
+                          ){
+    const response = readlineSync.question(prompt);
+    if(response.toLowerCase().includes('y')) {
+      console.log(yesText);
+      return
+    } else {
+      console.log(noText)
+      this.error('Aborting')
+      return
+    }
   }
 
   setupContainer(){
@@ -117,11 +160,14 @@ class PkgPyFuncs {
     if ( out === this.containerName ){
       this.log('Container already exists. Reusing.')
     } else {
-      this.runProcess(
-        'docker',
-        ['run', '--rm', '-dt', '-v', `${process.cwd()}:${this.dockerServicePath}`,
-          '--name',this.containerName, this.dockerImage, 'bash']
-        )
+      let args = ['run', '--rm', '-dt', '-v', `${process.cwd()}:${this.dockerServicePath}`]
+
+      if (this.mountSSH) {
+        args = args.concat(['-v', `${process.env.HOME}/.ssh:/root/.ssh`])
+      }
+
+      args = args.concat(['--name',this.containerName, this.dockerImage, 'bash'])
+      this.runProcess('docker', args)
       this.log('Container created')
     }
   }
@@ -168,14 +214,20 @@ class PkgPyFuncs {
     zipper.sync.zip(buildPath).compress().save(`${buildPath}.zip`)
   }
 
+
+
   constructor(serverless, options) {
     this.serverless = serverless;
     this.options = options;
     this.log = (msg) => { this.serverless.cli.log(`[serverless-package-python-functions] ${msg}`) }
     this.error = (msg) => { throw new Error(`[serverless-package-python-functions] ${msg}`) }
+
+
+
     this.hooks = {
       'before:package:createDeploymentArtifacts': () => BbPromise.bind(this)
         .then(this.fetchConfig)
+        .then(this.autoconfigArtifacts)
         .then( () => { Fse.ensureDirAsync(this.buildDir) })
         .then(this.setupDocker)
         .then(this.selectAll)
