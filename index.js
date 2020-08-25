@@ -24,6 +24,7 @@ class PkgPyFuncs {
     if ( !config ) {
       this.error("No serverless-package-python-functions configuration detected. Please see documentation")
     }
+
     this.requirementsFile = config.requirementsFile || 'requirements.txt'
     config.buildDir ? this.buildDir = config.buildDir : this.error("No buildDir configuration specified")
     this.globalRequirements = config.globalRequirements || []
@@ -34,6 +35,7 @@ class PkgPyFuncs {
     this.containerName = config.containerName || 'serverless-package-python-functions'
     this.mountSSH = config.mountSSH || false
     this.abortOnPackagingErrors = config.abortOnPackagingErrors || false
+
     this.dockerServicePath = '/var/task'
   }
 
@@ -67,8 +69,6 @@ class PkgPyFuncs {
     });
 
     const info = _.map(functions, (target) => {
-
-
       return {
         name: target.name,
         includes: target.package.include,
@@ -162,17 +162,19 @@ class PkgPyFuncs {
 
     if ( out === this.containerName ){
       this.log('Container already exists. Reusing.')
-    } else {
-      let args = ['run', '--rm', '-dt', '-v', `${process.cwd()}:${this.dockerServicePath}`]
-
-      if (this.mountSSH) {
-        args = args.concat(['-v', `${process.env.HOME}/.ssh:/root/.ssh`])
-      }
-
-      args = args.concat(['--name',this.containerName, this.dockerImage, 'bash'])
-      this.runProcess('docker', args)
-      this.log('Container created')
+      let out = this.runProcess('docker', ['kill', `${this.containerName}`])
+      this.log(out)
     }
+    
+    let args = ['run', '--rm', '-dt', '-v', `${process.cwd()}:${this.dockerServicePath}`]
+
+    if (this.mountSSH) {
+      args = args.concat(['-v', `${process.env.HOME}/.ssh:/root/.ssh`])
+    }
+
+    args = args.concat(['--name',this.containerName, this.dockerImage, 'bash'])
+    this.runProcess('docker', args)
+    this.log('Container created')
   }
 
   ensureImage(){
@@ -213,7 +215,7 @@ class PkgPyFuncs {
     if (this.globalRequirements){
       requirements = _.concat(requirements, this.globalRequirements)
     }
-    _.forEach(requirements, (req) => { this.installRequirements(buildPath,req)})
+    _.forEach(requirements, (req) => { this.installRequirements(buildPath,req) })
     zipper.sync.zip(buildPath).compress().save(`${buildPath}.zip`)
   }
 
