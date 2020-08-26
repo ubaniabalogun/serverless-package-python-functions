@@ -67,8 +67,6 @@ class PkgPyFuncs {
     });
 
     const info = _.map(functions, (target) => {
-
-
       return {
         name: target.name,
         includes: target.package.include,
@@ -122,7 +120,8 @@ class PkgPyFuncs {
       if (this.abortOnPackagingErrors){
         const countErrorNewLines = errorText.split('\n').length
 
-        if(countErrorNewLines < 2 && errorText.toLowerCase().includes('git clone')){
+        
+        if(!errorText.includes("ERROR:") && countErrorNewLines < 2 && errorText.toLowerCase().includes('git clone')){
           // Ignore false positive due to pip git clone printing to stderr
         } else if(errorText.toLowerCase().includes('warning') && !errorText.toLowerCase().includes('error')){
           // Ignore warnings
@@ -162,17 +161,19 @@ class PkgPyFuncs {
 
     if ( out === this.containerName ){
       this.log('Container already exists. Reusing.')
-    } else {
-      let args = ['run', '--rm', '-dt', '-v', `${process.cwd()}:${this.dockerServicePath}`]
-
-      if (this.mountSSH) {
-        args = args.concat(['-v', `${process.env.HOME}/.ssh:/root/.ssh`])
-      }
-
-      args = args.concat(['--name',this.containerName, this.dockerImage, 'bash'])
-      this.runProcess('docker', args)
-      this.log('Container created')
+      let out = this.runProcess('docker', ['kill', `${this.containerName}`])
+      this.log(out)
     }
+    
+    let args = ['run', '--rm', '-dt', '-v', `${process.cwd()}:${this.dockerServicePath}`]
+
+    if (this.mountSSH) {
+      args = args.concat(['-v', `${process.env.HOME}/.ssh:/root/.ssh`])
+    }
+
+    args = args.concat(['--name',this.containerName, this.dockerImage, 'bash'])
+    this.runProcess('docker', args)
+    this.log('Container created')
   }
 
   ensureImage(){
@@ -213,7 +214,7 @@ class PkgPyFuncs {
     if (this.globalRequirements){
       requirements = _.concat(requirements, this.globalRequirements)
     }
-    _.forEach(requirements, (req) => { this.installRequirements(buildPath,req)})
+    _.forEach(requirements, (req) => { this.installRequirements(buildPath,req) })
     zipper.sync.zip(buildPath).compress().save(`${buildPath}.zip`)
   }
 
