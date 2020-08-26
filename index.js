@@ -24,7 +24,6 @@ class PkgPyFuncs {
     if ( !config ) {
       this.error("No serverless-package-python-functions configuration detected. Please see documentation")
     }
-
     this.requirementsFile = config.requirementsFile || 'requirements.txt'
     config.buildDir ? this.buildDir = config.buildDir : this.error("No buildDir configuration specified")
     this.globalRequirements = config.globalRequirements || []
@@ -35,7 +34,6 @@ class PkgPyFuncs {
     this.containerName = config.containerName || 'serverless-package-python-functions'
     this.mountSSH = config.mountSSH || false
     this.abortOnPackagingErrors = config.abortOnPackagingErrors || false
-
     this.dockerServicePath = '/var/task'
   }
 
@@ -122,7 +120,8 @@ class PkgPyFuncs {
       if (this.abortOnPackagingErrors){
         const countErrorNewLines = errorText.split('\n').length
 
-        if(countErrorNewLines < 2 && errorText.toLowerCase().includes('git clone')){
+        
+        if(!errorText.includes("ERROR:") && countErrorNewLines < 2 && errorText.toLowerCase().includes('git clone')){
           // Ignore false positive due to pip git clone printing to stderr
         } else if(errorText.toLowerCase().includes('warning') && !errorText.toLowerCase().includes('error')){
           // Ignore warnings
