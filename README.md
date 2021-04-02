@@ -102,6 +102,9 @@ custom:
       - ./requirements.txt
     globalIncludes:
       - ./common_files
+    globalExcludes:
+      - '**/*.egg-info'
+      - '**/__pycache__'
     cleanup: true
 
 functions:
@@ -130,6 +133,7 @@ The plugin configurations are simple:
 | requirementsFile   | The name of the requirements file used for function-level requirements. All function-level requirements files must use the name specified here.                                                                    | Yes. Defaults to `requirements.txt`                        |
 | globalRequirements | A list of paths to files containing service-level pip requirements.                                                                                                                                                | Yes                                                        |
 | globalIncludes     | A list of paths to folders containing service-level code files (i.e. code common to all functions). Only the folders contents will be packaged, not the folder itself. Paths to files are not currently supported. | Yes                                                        |
+| globalExcludes     | A list of paths to exclude from the package. Use glob syntax to specify files or directories to exclude, e.g. `'**/*.egg-info'`                                                                                    | Yes                                                        |
 | useDocker          | Boolean indicating whether to package pip dependencies using Docker. Set this to true if your project uses platform-specific compiled libraries like numpy. Requires a [Docker installation](https://www.docker.com/get-docker).                        | Yes. Defaults to `false`                                   |
 | dockerImage        | The Docker image to use to compile functions if `useDocker` is set to `true`. Must be specified as `repository:tag`. If the image doesn't exist on the system, it will be downloaded. The initial download may take some time.                            | Yes. Defaults to `lambci/lambda:build-${provider.runtime}` |
 | containerName      | The desired name for the Docker container.                                                                                                                                                                         | Yes. Defaults to `serverless-package-python-functions`     |
@@ -138,6 +142,7 @@ The plugin configurations are simple:
 At the function level, you:
 - Specify `name` to give your function a name. The plugin uses the function's name as the name of the zip artifact
 - Use `include` to specify what function-level files you want to include in your artifact. Simply specifying the path to the function's folder will include every file in the folder in the function's zip artifact
+- Use `exclude` to specify what function-level files or directories you want to exclude in your artifact. Use glob syntax to specify target content.
 - Use `artifact` to tell Serverless where to find the zip artifact. The plugin creates the zip artifact for the function at `buildDir`/`name`.zip, so using `${self:custom.pkgPyFuncs.buildDir}/[function-name-here].zip` is advised.
 
 At the package level, you may need to:

@@ -10,6 +10,7 @@
     "bluebird": "^3.5.0",
     "fs-extra": "^3.0.0",
     "lodash": "^4.17.11",
+    "minimatch": "^3.0.4",
     "upath": "^1.1.0",
     "readline-sync": "^1.4.10",
     "zip-local": "^0.3.4"
