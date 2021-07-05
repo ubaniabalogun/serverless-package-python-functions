@@ -70,6 +70,7 @@ class PkgPyFuncs {
       return {
         name: target.name,
         includes: target.package.include,
+        patterns: target.package.patterns,
         artifact: target.package.artifact
       }
     })
@@ -206,6 +207,9 @@ class PkgPyFuncs {
     let includes = target.includes || []
     if (this.globalIncludes){
       includes = _.concat(includes, this.globalIncludes)
+    }
+    if (target.patterns){
+      includes = _.concat(includes, target.patterns.filter( e => !e.startsWith('!')))
     }
     _.forEach(includes, (item) => { Fse.copySync(item, buildPath) } )
 
