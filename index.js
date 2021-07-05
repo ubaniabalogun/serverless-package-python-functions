@@ -70,6 +70,7 @@ class PkgPyFuncs {
       return {
         name: target.name,
         includes: target.package.include,
+        patterns: target.package.patterns,
         artifact: target.package.artifact
       }
     })
@@ -207,8 +208,10 @@ class PkgPyFuncs {
     if (this.globalIncludes){
       includes = _.concat(includes, this.globalIncludes)
     }
-    _.forEach(includes, (item) => { Fse.copySync(item, buildPath) } )
-
+    if (target.patterns){
+      includes = _.concat(includes, target.patterns.filter( e => !e.startsWith('!')))
+    }
+    _.forEach(includes, (item) => { Fse.copySync(item, buildPath, {dereference:true}) } )
     // Install requirements
     let requirements = [requirementsPath]
     if (this.globalRequirements){
