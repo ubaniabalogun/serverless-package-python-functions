@@ -207,8 +207,7 @@ class PkgPyFuncs {
     if (this.globalIncludes){
       includes = _.concat(includes, this.globalIncludes)
     }
-    _.forEach(includes, (item) => { Fse.copySync(item, buildPath) } )
-
+    _.forEach(includes, (item) => { Fse.copySync(item, buildPath, {dereference:true}) } )
     // Install requirements
     let requirements = [requirementsPath]
     if (this.globalRequirements){
