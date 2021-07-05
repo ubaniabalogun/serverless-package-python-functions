@@ -211,8 +211,7 @@ class PkgPyFuncs {
     if (target.patterns){
       includes = _.concat(includes, target.patterns.filter( e => !e.startsWith('!')))
     }
-    _.forEach(includes, (item) => { Fse.copySync(item, buildPath) } )
-
+    _.forEach(includes, (item) => { Fse.copySync(item, buildPath, {dereference:true}) } )
     // Install requirements
     let requirements = [requirementsPath]
     if (this.globalRequirements){
